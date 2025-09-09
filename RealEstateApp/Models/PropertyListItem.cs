@@ -1,31 +1,42 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace RealEstateApp.Models;
-public class PropertyListItem : INotifyPropertyChanged
+namespace RealEstateApp.Models
 {
-    public PropertyListItem(Property property)
+    public class PropertyListItem : INotifyPropertyChanged
     {
-        Property = property;
-    }
-
-    private Property _property;
-
-    public Property Property
-    {
-        get => _property;
-        set
+        public PropertyListItem(Property property)
         {
-            _property = value;
-            OnPropertyChanged();
+            Property = property;
         }
-    }
 
+        private Property _property;
+        public Property Property
+        {
+            get => _property;
+            set
+            {
+                _property = value;
+                OnPropertyChanged();
+            }
+        }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+        private double _distance;
+        public double Distance
+        {
+            get => _distance;
+            set
+            {
+                _distance = value;
+                OnPropertyChanged();
+            }
+        }
 
-    public void OnPropertyChanged([CallerMemberName] string propertyName = "")
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
