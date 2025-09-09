@@ -67,9 +67,17 @@ public class AddEditPropertyPageViewModel : BaseViewModel
     }
     #endregion
 
-
+    #region COMMANDS
     private Command savePropertyCommand;
     public ICommand SavePropertyCommand => savePropertyCommand ??= new Command(async () => await SaveProperty());
+    
+    private Command cancelSaveCommand;
+    public ICommand CancelSaveCommand => cancelSaveCommand ??= new Command(async () => await Shell.Current.GoToAsync(".."));
+    
+    private Command getLocationCommand;
+    public ICommand GetLocationCommand => getLocationCommand ??= new Command(async () => await GetCurrentLocation());
+    #endregion
+
     private async Task SaveProperty()
     {
         if (IsValid() == false)
@@ -94,6 +102,50 @@ public class AddEditPropertyPageViewModel : BaseViewModel
         return true;
     }
 
-    private Command cancelSaveCommand;
-    public ICommand CancelSaveCommand => cancelSaveCommand ??= new Command(async () => await Shell.Current.GoToAsync(".."));
+    private async Task GetCurrentLocation()
+    {
+        try
+        {
+            var request = new GeolocationRequest
+            {
+                DesiredAccuracy = GeolocationAccuracy.Medium,
+                Timeout = TimeSpan.FromSeconds(10)
+            };
+
+            var cts = new CancellationTokenSource();
+            var location = await Geolocation.GetLocationAsync(request, cts.Token);
+
+            if (location != null)
+            {
+                Property.Latitude = location.Latitude;
+                Property.Longitude = location.Longitude;
+                
+                // Refresh UI binding
+                OnPropertyChanged(nameof(Property));
+                
+                StatusMessage = "Location updated successfully";
+                StatusColor = Colors.Green;
+            }
+        }
+        catch (FeatureNotSupportedException fnsEx)
+        {
+            StatusMessage = "Geolocation is not supported on this device";
+            StatusColor = Colors.Red;
+        }
+        catch (FeatureNotEnabledException fneEx)
+        {
+            StatusMessage = "Geolocation is not enabled";
+            StatusColor = Colors.Red;
+        }
+        catch (PermissionException pEx)
+        {
+            StatusMessage = "Location permission denied";
+            StatusColor = Colors.Red;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Unable to get location";
+            StatusColor = Colors.Red;
+        }
+    }
 }
