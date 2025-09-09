@@ -10,13 +10,12 @@
     x:DataType="vm:PropertyListPageViewModel">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Add" />
+        <ToolbarItem Text="Add" Command="{Binding GoToAddPropertyCommand}" />
     </ContentPage.ToolbarItems>
 
-    <RefreshView>
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
 
         <CollectionView
-            BackgroundColor="LightGray"
             ItemsSource="{Binding PropertiesCollection}"
             SelectionMode="None">
 
@@ -30,7 +29,6 @@
                             <Grid
                                 Margin="0"
                                 Padding="0"
-                                BackgroundColor="White"
                                 ColumnDefinitions="Auto, *">
                                 <Image
                                     Grid.Column="0"

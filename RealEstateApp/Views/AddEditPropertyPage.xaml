@@ -16,7 +16,7 @@
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
-        <StackLayout BackgroundColor="#E8E8E8">
+        <StackLayout>
             <Label
                 BackgroundColor="{Binding StatusColor}"
                 IsVisible="{Binding StatusMessage, Converter={converters:StringBoolConverter}}"

@@ -25,8 +25,14 @@ public class PropertyListPageViewModel : BaseViewModel
         set => SetProperty(ref isRefreshing, value);
     }
 
-    //private Command getPropertiesCommand;
-    //public ICommand GetPropertiesCommand => getPropertiesCommand ??= new Command(async () => await GetPropertiesAsync());
+    private Command getPropertiesCommand;
+    public ICommand GetPropertiesCommand => getPropertiesCommand ??= new Command(async () => await GetPropertiesAsync());
+
+    private Command refreshCommand;
+    public ICommand RefreshCommand => refreshCommand ??= new Command(async () => await GetPropertiesAsync());
+
+    private Command<PropertyListItem> goToDetailsCommand;
+    public ICommand GoToDetailsCommand => goToDetailsCommand ??= new Command<PropertyListItem>(async (item) => await GoToDetails(item));
 
     async Task GetPropertiesAsync()
     {
@@ -47,7 +53,7 @@ public class PropertyListPageViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Unable to get monkeys: {ex.Message}");
+            Debug.WriteLine($"Unable to get properties: {ex.Message}");
             await Shell.Current.DisplayAlert("Error!", ex.Message, "OK");
         }
         finally

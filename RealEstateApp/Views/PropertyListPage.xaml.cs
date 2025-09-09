@@ -16,6 +16,6 @@ public partial class PropertyListPage : ContentPage
     {
         base.OnAppearing();
 
-        //vm.GetPropertiesCommand.Execute(null);
+        vm.GetPropertiesCommand.Execute(null);
     }
 }
