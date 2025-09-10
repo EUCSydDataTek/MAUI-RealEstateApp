@@ -76,6 +76,9 @@ public class AddEditPropertyPageViewModel : BaseViewModel
     
     private Command getLocationCommand;
     public ICommand GetLocationCommand => getLocationCommand ??= new Command(async () => await GetCurrentLocation());
+    
+    private Command geocodeAddressCommand;
+    public ICommand GeocodeAddressCommand => geocodeAddressCommand ??= new Command(async () => await GeocodeAddress());
     #endregion
 
     private async Task SaveProperty()
@@ -120,24 +123,27 @@ public class AddEditPropertyPageViewModel : BaseViewModel
                 Property.Latitude = location.Latitude;
                 Property.Longitude = location.Longitude;
                 
+                // Perform reverse geocoding to get address
+                await ReverseGeocodeLocation(location);
+                
                 // Refresh UI binding
                 OnPropertyChanged(nameof(Property));
                 
-                StatusMessage = "Location updated successfully";
+                StatusMessage = "Location and address updated successfully";
                 StatusColor = Colors.Green;
             }
         }
-        catch (FeatureNotSupportedException fnsEx)
+        catch (FeatureNotSupportedException)
         {
             StatusMessage = "Geolocation is not supported on this device";
             StatusColor = Colors.Red;
         }
-        catch (FeatureNotEnabledException fneEx)
+        catch (FeatureNotEnabledException)
         {
             StatusMessage = "Geolocation is not enabled";
             StatusColor = Colors.Red;
         }
-        catch (PermissionException pEx)
+        catch (PermissionException)
         {
             StatusMessage = "Location permission denied";
             StatusColor = Colors.Red;
@@ -145,6 +151,88 @@ public class AddEditPropertyPageViewModel : BaseViewModel
         catch (Exception ex)
         {
             StatusMessage = "Unable to get location";
+            StatusColor = Colors.Red;
+        }
+    }
+
+    private async Task ReverseGeocodeLocation(Location location)
+    {
+        try
+        {
+            var placemarks = await Geocoding.GetPlacemarksAsync(location.Latitude, location.Longitude);
+            var placemark = placemarks?.FirstOrDefault();
+
+            if (placemark != null)
+            {
+                // Build address string from placemark
+                var addressParts = new List<string>();
+                
+                if (!string.IsNullOrEmpty(placemark.Thoroughfare))
+                    addressParts.Add(placemark.Thoroughfare);
+                
+                if (!string.IsNullOrEmpty(placemark.SubThoroughfare))
+                    addressParts.Add(placemark.SubThoroughfare);
+                    
+                if (!string.IsNullOrEmpty(placemark.Locality))
+                    addressParts.Add(placemark.Locality);
+                    
+                if (!string.IsNullOrEmpty(placemark.PostalCode))
+                    addressParts.Add(placemark.PostalCode);
+                    
+                if (!string.IsNullOrEmpty(placemark.CountryName))
+                    addressParts.Add(placemark.CountryName);
+
+                Property.Address = string.Join(", ", addressParts);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Reverse geocoding failed, but that's okay - we still have coordinates
+            StatusMessage = "Location updated, but unable to get address";
+            StatusColor = Colors.Orange;
+        }
+    }
+
+    private async Task GeocodeAddress()
+    {
+        try
+        {
+            // Check if address field is empty
+            if (string.IsNullOrWhiteSpace(Property?.Address))
+            {
+                await Shell.Current.DisplayAlert("Address Required", "Please enter an address first", "OK");
+                return;
+            }
+
+            // Perform geocoding
+            var locations = await Geocoding.GetLocationsAsync(Property.Address);
+            var location = locations?.FirstOrDefault();
+
+            if (location != null)
+            {
+                Property.Latitude = location.Latitude;
+                Property.Longitude = location.Longitude;
+                
+                // Refresh UI binding
+                OnPropertyChanged(nameof(Property));
+                
+                StatusMessage = "Coordinates updated successfully";
+                StatusColor = Colors.Green;
+            }
+            else
+            {
+                StatusMessage = "Unable to find coordinates for this address";
+                StatusColor = Colors.Red;
+            }
+        }
+        catch (FeatureNotSupportedException)
+        {
+            StatusMessage = "Geocoding is not supported on this device";
+            StatusColor = Colors.Red;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Unable to geocode address";
             StatusColor = Colors.Red;
         }
     }
