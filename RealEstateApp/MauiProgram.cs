@@ -22,6 +22,10 @@ public static class MauiProgram
 
         // Register Connectivity service
         builder.Services.AddSingleton<IConnectivity>(Connectivity.Current);
+        
+        // Register Vibration and HapticFeedback services
+        builder.Services.AddSingleton<IVibration>(Vibration.Default);
+        builder.Services.AddSingleton<IHapticFeedback>(HapticFeedback.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
