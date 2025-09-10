@@ -61,12 +61,21 @@
                                 Text="{x:Static fa:IconFont.Thumbtack}"
                                 TextColor="White" />
                         <Button Grid.Column="3" 
-                                BackgroundColor="#6200ea"
                                 Command="{Binding GeocodeAddressCommand}"
                                 FontFamily="FA-solid"
                                 FontSize="Medium"
+                                IsEnabled="{Binding IsNetworkAvailable}"
                                 Text="{x:Static fa:IconFont.Home}"
-                                TextColor="White" />
+                                TextColor="White">
+                            <Button.Triggers>
+                                <DataTrigger TargetType="Button" Binding="{Binding IsNetworkAvailable}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="#6200ea" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Button" Binding="{Binding IsNetworkAvailable}" Value="False">
+                                    <Setter Property="BackgroundColor" Value="Gray" />
+                                </DataTrigger>
+                            </Button.Triggers>
+                        </Button>
                     </Grid>
 
                     <Label FontFamily="FA-solid" FontSize="Medium">

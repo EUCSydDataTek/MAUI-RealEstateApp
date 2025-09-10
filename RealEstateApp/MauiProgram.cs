@@ -20,6 +20,9 @@ public static class MauiProgram
                 fonts.AddFont("fa-solid-900.ttf", "FA-solid");
             });
 
+        // Register Connectivity service
+        builder.Services.AddSingleton<IConnectivity>(Connectivity.Current);
+
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
         builder.Services.AddSingleton<PropertyListPageViewModel>();

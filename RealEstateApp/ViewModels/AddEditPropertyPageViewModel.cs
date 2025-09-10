@@ -7,14 +7,22 @@ namespace RealEstateApp.ViewModels;
 
 [QueryProperty(nameof(Mode), "mode")]
 [QueryProperty(nameof(Property), "MyProperty")]
-public class AddEditPropertyPageViewModel : BaseViewModel
+public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
 {
     readonly IPropertyService service;
+    readonly IConnectivity connectivity;
 
-    public AddEditPropertyPageViewModel(IPropertyService service)
+    public AddEditPropertyPageViewModel(IPropertyService service, IConnectivity connectivity)
     {
         this.service = service;
+        this.connectivity = connectivity;
         Agents = new ObservableCollection<Agent>(service.GetAgents());
+        
+        // Subscribe to connectivity changes
+        this.connectivity.ConnectivityChanged += OnConnectivityChanged;
+        
+        // Initialize network status
+        UpdateNetworkStatus();
     }
 
     public string Mode { get; set; }
@@ -65,6 +73,15 @@ public class AddEditPropertyPageViewModel : BaseViewModel
         get { return statusColor; }
         set { SetProperty(ref statusColor, value); }
     }
+
+    private bool _isNetworkAvailable;
+    public bool IsNetworkAvailable
+    {
+        get => _isNetworkAvailable;
+        set => SetProperty(ref _isNetworkAvailable, value);
+    }
+
+    private bool _hasShownInitialConnectivityAlert = false;
     #endregion
 
     #region COMMANDS
@@ -79,6 +96,55 @@ public class AddEditPropertyPageViewModel : BaseViewModel
     
     private Command geocodeAddressCommand;
     public ICommand GeocodeAddressCommand => geocodeAddressCommand ??= new Command(async () => await GeocodeAddress());
+    #endregion
+
+    #region CONNECTIVITY METHODS
+    private void UpdateNetworkStatus()
+    {
+        IsNetworkAvailable = connectivity.NetworkAccess == NetworkAccess.Internet;
+        
+        // Show initial connectivity alert when page loads
+        if (!_hasShownInitialConnectivityAlert)
+        {
+            _hasShownInitialConnectivityAlert = true;
+            if (!IsNetworkAvailable)
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await Shell.Current.DisplayAlert("No Internet Connection", 
+                        "Internet connection is required for geocoding features. Please check your connection.", "OK");
+                });
+            }
+        }
+    }
+
+    private void OnConnectivityChanged(object sender, ConnectivityChangedEventArgs e)
+    {
+        bool wasConnected = IsNetworkAvailable;
+        UpdateNetworkStatus();
+        
+        // Show alert when connectivity changes (but not on initial load)
+        if (_hasShownInitialConnectivityAlert)
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                if (IsNetworkAvailable && !wasConnected)
+                {
+                    await Shell.Current.DisplayAlert("Internet Connected", 
+                        "Internet connection restored. Geocoding features are now available.", "OK");
+                    StatusMessage = "Internet connection restored";
+                    StatusColor = Colors.Green;
+                }
+                else if (!IsNetworkAvailable && wasConnected)
+                {
+                    await Shell.Current.DisplayAlert("No Internet Connection", 
+                        "Internet connection lost. Geocoding features are unavailable.", "OK");
+                    StatusMessage = "No internet connection";
+                    StatusColor = Colors.Red;
+                }
+            });
+        }
+    }
     #endregion
 
     private async Task SaveProperty()
@@ -123,13 +189,19 @@ public class AddEditPropertyPageViewModel : BaseViewModel
                 Property.Latitude = location.Latitude;
                 Property.Longitude = location.Longitude;
                 
-                // Perform reverse geocoding to get address
-                await ReverseGeocodeLocation(location);
+                // Only perform reverse geocoding if network is available
+                if (IsNetworkAvailable)
+                {
+                    await ReverseGeocodeLocation(location);
+                    StatusMessage = "Location and address updated successfully";
+                }
+                else
+                {
+                    StatusMessage = "Location updated (address unavailable - no internet)";
+                }
                 
                 // Refresh UI binding
                 OnPropertyChanged(nameof(Property));
-                
-                StatusMessage = "Location and address updated successfully";
                 StatusColor = Colors.Green;
             }
         }
@@ -167,11 +239,11 @@ public class AddEditPropertyPageViewModel : BaseViewModel
                 // Build address string from placemark
                 var addressParts = new List<string>();
                 
-                if (!string.IsNullOrEmpty(placemark.Thoroughfare))
-                    addressParts.Add(placemark.Thoroughfare);
-                
                 if (!string.IsNullOrEmpty(placemark.SubThoroughfare))
                     addressParts.Add(placemark.SubThoroughfare);
+                
+                if (!string.IsNullOrEmpty(placemark.Thoroughfare))
+                    addressParts.Add(placemark.Thoroughfare);
                     
                 if (!string.IsNullOrEmpty(placemark.Locality))
                     addressParts.Add(placemark.Locality);
@@ -197,6 +269,14 @@ public class AddEditPropertyPageViewModel : BaseViewModel
     {
         try
         {
+            // Check network connectivity first
+            if (!IsNetworkAvailable)
+            {
+                await Shell.Current.DisplayAlert("No Internet Connection", 
+                    "Internet connection is required for geocoding. Please check your connection.", "OK");
+                return;
+            }
+
             // Check if address field is empty
             if (string.IsNullOrWhiteSpace(Property?.Address))
             {
@@ -232,8 +312,14 @@ public class AddEditPropertyPageViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = "Unable to geocode address";
+            StatusMessage = "Unable to geocode address - check your internet connection";
             StatusColor = Colors.Red;
         }
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from connectivity changes to prevent memory leaks
+        connectivity.ConnectivityChanged -= OnConnectivityChanged;
     }
 }
