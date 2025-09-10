@@ -13,14 +13,39 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem Command="{Binding CancelSaveCommand}" Text="Cancel" />
         <ToolbarItem Command="{Binding SavePropertyCommand}" Text="Save" />
+        <!-- Flashlight Button in Toolbar -->
+        <ToolbarItem Command="{Binding ToggleFlashlightCommand}" Text="{Binding FlashlightButtonText}" />
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
         <StackLayout>
+            <!-- Battery Warning -->
+            <Label
+                BackgroundColor="{Binding BatteryColor}"
+                FontAttributes="Bold"
+                FontSize="14"
+                IsVisible="{Binding IsBatteryWarningVisible}"
+                Padding="10,5"
+                Text="{Binding BatteryMessage}"
+                TextColor="White" />
+            
+            <!-- Flashlight Status -->
+            <Grid BackgroundColor="LightYellow" 
+                  IsVisible="{Binding IsFlashlightOn}"
+                  Padding="10,5">
+                <Label Text="💡 Flashlight is ON - Useful for property viewing!" 
+                       FontSize="14" 
+                       FontAttributes="Bold"
+                       TextColor="DarkOrange"
+                       HorizontalOptions="Center" />
+            </Grid>
+            
+            <!-- Status Message -->
             <Label
                 BackgroundColor="{Binding StatusColor}"
                 IsVisible="{Binding StatusMessage, Converter={converters:StringBoolConverter}}"
                 Text="{Binding StatusMessage}" />
+                
             <ScrollView VerticalOptions="FillAndExpand">
                 <StackLayout Padding="15" Spacing="20">
 

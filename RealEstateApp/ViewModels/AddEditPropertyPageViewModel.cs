@@ -13,23 +13,33 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
     readonly IConnectivity connectivity;
     readonly IVibration vibration;
     readonly IHapticFeedback hapticFeedback;
+    readonly IBattery battery;
+    readonly IFlashlight flashlight;
 
     // Cancellation token for vibration
     private CancellationTokenSource _vibrationCts;
 
-    public AddEditPropertyPageViewModel(IPropertyService service, IConnectivity connectivity, IVibration vibration, IHapticFeedback hapticFeedback)
+    public AddEditPropertyPageViewModel(IPropertyService service, IConnectivity connectivity, IVibration vibration, IHapticFeedback hapticFeedback, IBattery battery, IFlashlight flashlight)
     {
         this.service = service;
         this.connectivity = connectivity;
         this.vibration = vibration;
         this.hapticFeedback = hapticFeedback;
+        this.battery = battery;
+        this.flashlight = flashlight;
         Agents = new ObservableCollection<Agent>(service.GetAgents());
         
         // Subscribe to connectivity changes
         this.connectivity.ConnectivityChanged += OnConnectivityChanged;
         
+        // Subscribe to battery changes
+        this.battery.BatteryInfoChanged += OnBatteryInfoChanged;
+        
         // Initialize network status
         UpdateNetworkStatus();
+        
+        // Initialize battery status
+        UpdateBatteryStatus();
     }
 
     public string Mode { get; set; }
@@ -89,6 +99,43 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
     }
 
     private bool _hasShownInitialConnectivityAlert = false;
+
+    // Battery properties
+    private string _batteryMessage;
+    public string BatteryMessage
+    {
+        get => _batteryMessage;
+        set => SetProperty(ref _batteryMessage, value);
+    }
+
+    private Color _batteryColor;
+    public Color BatteryColor
+    {
+        get => _batteryColor;
+        set => SetProperty(ref _batteryColor, value);
+    }
+
+    private bool _isBatteryWarningVisible;
+    public bool IsBatteryWarningVisible
+    {
+        get => _isBatteryWarningVisible;
+        set => SetProperty(ref _isBatteryWarningVisible, value);
+    }
+
+    // Flashlight properties
+    private bool _isFlashlightOn;
+    public bool IsFlashlightOn
+    {
+        get => _isFlashlightOn;
+        set => SetProperty(ref _isFlashlightOn, value);
+    }
+
+    private string _flashlightButtonText = "🔦";
+    public string FlashlightButtonText
+    {
+        get => _flashlightButtonText;
+        set => SetProperty(ref _flashlightButtonText, value);
+    }
     #endregion
 
     #region COMMANDS
@@ -103,6 +150,113 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
     
     private Command geocodeAddressCommand;
     public ICommand GeocodeAddressCommand => geocodeAddressCommand ??= new Command(async () => await GeocodeAddress());
+    
+    private Command toggleFlashlightCommand;
+    public ICommand ToggleFlashlightCommand => toggleFlashlightCommand ??= new Command(async () => await ToggleFlashlight());
+    #endregion
+
+    #region BATTERY METHODS
+    private void UpdateBatteryStatus()
+    {
+        try
+        {
+            double chargeLevel = battery.ChargeLevel;
+            BatteryState state = battery.State;
+            BatteryPowerSource powerSource = battery.PowerSource;
+            EnergySaverStatus energySaver = battery.EnergySaverStatus;
+
+            double batteryPercentage = chargeLevel * 100;
+
+            if (batteryPercentage < 20)
+            {
+                // Determine color based on charging state and energy saver
+                if (energySaver == EnergySaverStatus.On)
+                {
+                    BatteryColor = Colors.Green;
+                    BatteryMessage = $"Battery low ({batteryPercentage:F0}%) - Energy Saver ON";
+                }
+                else if (state == BatteryState.Charging || powerSource == BatteryPowerSource.AC)
+                {
+                    BatteryColor = Colors.Orange;
+                    BatteryMessage = $"Battery low ({batteryPercentage:F0}%) - Charging";
+                }
+                else
+                {
+                    BatteryColor = Colors.Red;
+                    BatteryMessage = $"Battery critically low ({batteryPercentage:F0}%)";
+                }
+                
+                IsBatteryWarningVisible = true;
+            }
+            else
+            {
+                IsBatteryWarningVisible = false;
+                BatteryMessage = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Battery monitoring not supported: {ex.Message}");
+            IsBatteryWarningVisible = false;
+        }
+    }
+
+    private void OnBatteryInfoChanged(object sender, BatteryInfoChangedEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            UpdateBatteryStatus();
+        });
+    }
+    #endregion
+
+    #region FLASHLIGHT METHODS
+    private async Task ToggleFlashlight()
+    {
+        try
+        {
+            if (IsFlashlightOn)
+            {
+                await flashlight.TurnOffAsync();
+                IsFlashlightOn = false;
+                FlashlightButtonText = "🔦";
+                StatusMessage = "Flashlight turned off";
+                StatusColor = Colors.Gray;
+            }
+            else
+            {
+                await flashlight.TurnOnAsync();
+                IsFlashlightOn = true;
+                FlashlightButtonText = "💡";
+                StatusMessage = "Flashlight turned on";
+                StatusColor = Colors.Yellow;
+            }
+            
+            // Haptic feedback for flashlight toggle
+            TriggerSuccessFeedback();
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Flashlight Error", "Flashlight is not supported on this device", "OK");
+            StatusMessage = "Flashlight not supported";
+            StatusColor = Colors.Red;
+            TriggerErrorFeedback();
+        }
+        catch (PermissionException)
+        {
+            await Shell.Current.DisplayAlert("Permission Required", "Camera permission is required to use flashlight", "OK");
+            StatusMessage = "Flashlight permission denied";
+            StatusColor = Colors.Red;
+            TriggerErrorFeedback();
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Flashlight Error", $"Unable to control flashlight: {ex.Message}", "OK");
+            StatusMessage = "Flashlight error (simulator limitation)";
+            StatusColor = Colors.Orange;
+            // Don't trigger error feedback for simulator limitations
+        }
+    }
     #endregion
 
     #region HAPTIC AND VIBRATION METHODS
@@ -243,6 +397,20 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
         // Cancel any ongoing vibration when canceling
         CancelVibration();
         
+        // Turn off flashlight when leaving page
+        if (IsFlashlightOn)
+        {
+            try
+            {
+                await flashlight.TurnOffAsync();
+                IsFlashlightOn = false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error turning off flashlight: {ex.Message}");
+            }
+        }
+        
         // Haptic feedback for cancel action
         TriggerSuccessFeedback();
         
@@ -263,6 +431,20 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
         {
             // Cancel any vibration before saving
             CancelVibration();
+            
+            // Turn off flashlight when saving
+            if (IsFlashlightOn)
+            {
+                try
+                {
+                    await flashlight.TurnOffAsync();
+                    IsFlashlightOn = false;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error turning off flashlight: {ex.Message}");
+                }
+            }
             
             service.SaveProperty(Property);
             StatusMessage = "Property saved successfully";
@@ -455,7 +637,24 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
         // Cancel any ongoing vibration
         CancelVibration();
         
-        // Unsubscribe from connectivity changes to prevent memory leaks
+        // Turn off flashlight when disposing
+        if (IsFlashlightOn)
+        {
+            try
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await flashlight.TurnOffAsync();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error turning off flashlight on dispose: {ex.Message}");
+            }
+        }
+        
+        // Unsubscribe from events to prevent memory leaks
         connectivity.ConnectivityChanged -= OnConnectivityChanged;
+        battery.BatteryInfoChanged -= OnBatteryInfoChanged;
     }
 }

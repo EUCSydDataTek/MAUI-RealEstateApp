@@ -29,6 +29,10 @@ public static class MauiProgram
         
         // Register TextToSpeech service
         builder.Services.AddSingleton<ITextToSpeech>(TextToSpeech.Default);
+        
+        // Register Battery and Flashlight services
+        builder.Services.AddSingleton<IBattery>(Battery.Default);
+        builder.Services.AddSingleton<IFlashlight>(Flashlight.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
