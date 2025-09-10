@@ -40,6 +40,9 @@ public static class MauiProgram
         // Register Barometer service for height calculator
         builder.Services.AddSingleton<IBarometer>(Barometer.Default);
         builder.Services.AddSingleton<IGeolocation>(Geolocation.Default);
+        
+        // Register Accelerometer service for shake detection
+        builder.Services.AddSingleton<IAccelerometer>(Accelerometer.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
@@ -56,6 +59,9 @@ public static class MauiProgram
 
         builder.Services.AddTransient<HeightCalculatorPage>();
         builder.Services.AddTransient<HeightCalculatorPageViewModel>();
+
+        builder.Services.AddTransient<ImageListPage>();
+        builder.Services.AddTransient<ImageListPageViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();

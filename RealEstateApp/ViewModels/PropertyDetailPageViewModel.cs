@@ -80,6 +80,9 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
 
     private Command decreaseVolumeCommand;
     public ICommand DecreaseVolumeCommand => decreaseVolumeCommand ??= new Command(() => DecreaseVolume());
+    
+    private Command goToImageListCommand;
+    public ICommand GoToImageListCommand => goToImageListCommand ??= new Command(async () => await GoToImageList());
     #endregion
 
     #region TEXT-TO-SPEECH METHODS
@@ -181,6 +184,27 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
         {
             {"MyProperty", Property }
         });
+    }
+
+    async Task GoToImageList()
+    {
+        // Stop any ongoing speech when navigating away
+        await StopSpeaking();
+        
+        if (Property == null)
+            return;
+
+        try
+        {
+            await Shell.Current.GoToAsync(nameof(ImageListPage), true, new Dictionary<string, object>
+            {
+                {"Property", Property }
+            });
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Navigation Error", $"Unable to open image gallery: {ex.Message}", "OK");
+        }
     }
 
     public void Dispose()
