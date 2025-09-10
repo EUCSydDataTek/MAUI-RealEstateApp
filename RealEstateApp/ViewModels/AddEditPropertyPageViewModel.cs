@@ -1,5 +1,6 @@
 ﻿using RealEstateApp.Models;
 using RealEstateApp.Services;
+using RealEstateApp.Views;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -153,6 +154,9 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
     
     private Command toggleFlashlightCommand;
     public ICommand ToggleFlashlightCommand => toggleFlashlightCommand ??= new Command(async () => await ToggleFlashlight());
+    
+    private Command goToCompassCommand;
+    public ICommand GoToCompassCommand => goToCompassCommand ??= new Command(async () => await GoToCompass());
     #endregion
 
     #region BATTERY METHODS
@@ -628,6 +632,31 @@ public class AddEditPropertyPageViewModel : BaseViewModel, IDisposable
         {
             StatusMessage = "Unable to geocode address - check your internet connection";
             StatusColor = Colors.Red;
+            TriggerErrorFeedback();
+        }
+    }
+
+    private async Task GoToCompass()
+    {
+        if (Property == null)
+        {
+            await Shell.Current.DisplayAlert("Property Required", "Please create a property first", "OK");
+            return;
+        }
+
+        try
+        {
+            await Shell.Current.GoToAsync(nameof(CompassPage), true, new Dictionary<string, object>
+            {
+                {"Property", Property }
+            });
+            
+            // Haptic feedback for compass navigation
+            TriggerSuccessFeedback();
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Navigation Error", $"Unable to open compass: {ex.Message}", "OK");
             TriggerErrorFeedback();
         }
     }

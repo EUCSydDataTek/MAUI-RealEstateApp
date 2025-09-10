@@ -103,7 +103,7 @@
                         </Button>
                     </Grid>
 
-                    <Label FontFamily="FA-solid" FontSize="Medium">
+                    <Label FontSize="Medium">
                         <Label.FormattedText>
                             <FormattedString>
                                 <Span FontFamily="FA-solid" Text="{Static fa:IconFont.Tag}" />
@@ -208,6 +208,30 @@
                         ItemDisplayBinding="{Binding Name}"
                         ItemsSource="{Binding Agents}"
                         SelectedItem="{Binding SelectedAgent}" />
+                    
+                    <Label FontSize="Medium">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span FontFamily="FA-solid" Text="{x:Static fa:IconFont.DraftingCompass}" />
+                                <Span Text=" " />
+                                <Span Text="Aspect" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Entry Grid.Column="0" 
+                               FontSize="Medium" 
+                               Text="{Binding Property.Aspect}" 
+                               Placeholder="Tap compass to detect"
+                               IsReadOnly="True" />
+                        <Button Grid.Column="1" 
+                                BackgroundColor="#6200ea"
+                                Command="{Binding GoToCompassCommand}"
+                                FontFamily="FA-solid"
+                                FontSize="Medium"
+                                Text="{x:Static fa:IconFont.DraftingCompass}"
+                                TextColor="White" />
+                    </Grid>
                 </StackLayout>
             </ScrollView>
         </StackLayout>

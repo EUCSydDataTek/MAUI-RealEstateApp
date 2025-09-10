@@ -33,6 +33,9 @@ public static class MauiProgram
         // Register Battery and Flashlight services
         builder.Services.AddSingleton<IBattery>(Battery.Default);
         builder.Services.AddSingleton<IFlashlight>(Flashlight.Default);
+        
+        // Register Magnetometer service for compass
+        builder.Services.AddSingleton<IMagnetometer>(Magnetometer.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
@@ -43,6 +46,9 @@ public static class MauiProgram
 
         builder.Services.AddTransient<AddEditPropertyPage>();
         builder.Services.AddTransient<AddEditPropertyPageViewModel>();
+
+        builder.Services.AddTransient<CompassPage>();
+        builder.Services.AddTransient<CompassPageViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();
