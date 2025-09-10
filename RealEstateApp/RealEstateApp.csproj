@@ -66,10 +66,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Converters\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <MauiAsset Include="Helpers\IconFont.cs" />
 	</ItemGroup>
 
@@ -91,6 +87,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\CompassPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\HeightCalculatorPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\PropertyDetailPage.xaml">

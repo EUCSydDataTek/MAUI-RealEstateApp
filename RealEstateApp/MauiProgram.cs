@@ -36,6 +36,10 @@ public static class MauiProgram
         
         // Register Magnetometer service for compass
         builder.Services.AddSingleton<IMagnetometer>(Magnetometer.Default);
+        
+        // Register Barometer service for height calculator
+        builder.Services.AddSingleton<IBarometer>(Barometer.Default);
+        builder.Services.AddSingleton<IGeolocation>(Geolocation.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();
@@ -49,6 +53,9 @@ public static class MauiProgram
 
         builder.Services.AddTransient<CompassPage>();
         builder.Services.AddTransient<CompassPageViewModel>();
+
+        builder.Services.AddTransient<HeightCalculatorPage>();
+        builder.Services.AddTransient<HeightCalculatorPageViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();

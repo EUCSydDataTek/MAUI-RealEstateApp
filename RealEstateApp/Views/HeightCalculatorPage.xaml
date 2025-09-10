@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="RealEstateApp.Views.HeightCalculatorPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:RealEstateApp.ViewModels"
+    xmlns:models="clr-namespace:RealEstateApp.Models"
+    xmlns:converters="clr-namespace:RealEstateApp.Converters"
+    Title="{Binding Title}"
+    x:DataType="vm:HeightCalculatorPageViewModel">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:DoubleToVisibilityConverter x:Key="DoubleToVisibilityConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Command="{Binding CalibrateCommand}" Text="Calibrate" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="20">
+            
+            <!-- Current Altitude Display -->
+            <Label Text="{Binding CurrentAltitude, StringFormat='Current Altitude {0:N2} m'}" 
+                   FontSize="Large" 
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <!-- Measurement Input Section -->
+            <StackLayout Spacing="10">
+                <Entry Placeholder="Measurement Label" 
+                       Text="{Binding MeasurementLabel}"
+                       FontSize="Medium" />
+                
+                <Button Text="Save" 
+                        Command="{Binding SaveMeasurementCommand}"
+                        BackgroundColor="#6200ea"
+                        TextColor="White"
+                        FontSize="Medium" />
+            </StackLayout>
+
+            <!-- Measurements List -->
+            <CollectionView ItemsSource="{Binding Measurements}" 
+                           EmptyView="No measurements saved yet">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:BarometerMeasurement">
+                        <Grid Padding="0,5" ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" 
+                                   Text="{Binding Display}" 
+                                   FontSize="Medium" 
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1" 
+                                   Text="{Binding HeightChange, StringFormat='({0:+0.00;-0.00;0.00}m)'}" 
+                                   FontSize="Small" 
+                                   TextColor="Gray"
+                                   VerticalOptions="Center"
+                                   IsVisible="{Binding HeightChange, Converter={StaticResource DoubleToVisibilityConverter}}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Status and Current Pressure Display -->
+            <StackLayout Spacing="5">
+                <Label Text="{Binding StatusMessage}" 
+                       FontSize="Small" 
+                       TextColor="Gray"
+                       HorizontalOptions="Center" />
+                
+                <Label Text="{Binding CurrentPressure, StringFormat='Current Pressure {0:N2} hPa'}" 
+                       FontSize="Small" 
+                       TextColor="DarkBlue"
+                       HorizontalOptions="Center" />
+            </StackLayout>
+            
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

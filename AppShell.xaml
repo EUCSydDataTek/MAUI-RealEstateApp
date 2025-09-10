@@ -12,6 +12,11 @@
         Route="propertylist" />
 
     <ShellContent
+        Title="Height Calculator"
+        ContentTemplate="{DataTemplate views:HeightCalculatorPage}"
+        Route="heightcalculator" />
+
+    <ShellContent
         Title="About"
         ContentTemplate="{DataTemplate views:AboutPage}"
         Route="about" />
