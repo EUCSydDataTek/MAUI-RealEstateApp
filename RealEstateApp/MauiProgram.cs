@@ -26,6 +26,9 @@ public static class MauiProgram
         // Register Vibration and HapticFeedback services
         builder.Services.AddSingleton<IVibration>(Vibration.Default);
         builder.Services.AddSingleton<IHapticFeedback>(HapticFeedback.Default);
+        
+        // Register TextToSpeech service
+        builder.Services.AddSingleton<ITextToSpeech>(TextToSpeech.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();

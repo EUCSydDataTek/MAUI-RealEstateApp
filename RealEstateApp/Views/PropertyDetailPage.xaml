@@ -5,8 +5,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:fa="clr-namespace:FontAwesome"
     xmlns:vm="clr-namespace:RealEstateApp.ViewModels"
+    xmlns:converters="clr-namespace:RealEstateApp.Converters"
     Title="{Binding Property.Address}"
     x:DataType="vm:PropertyDetailPageViewModel">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <ContentPage.ToolbarItems>
         <ToolbarItem Command="{Binding EditPropertyCommand}" Text="Edit" />
@@ -15,7 +22,7 @@
     <ScrollView>
         <Grid
             Padding="15"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
             RowSpacing="10">
             <Image
                 Grid.Row="0"
@@ -73,23 +80,116 @@
                 Grid.Row="4"
                 FontSize="14"
                 Text="{Binding Property.LandSize, StringFormat='Land size: {0} &#x33a1;'}" />
-            <Label
-                Grid.Row="5"
-                Margin="0,20,0,0"
-                FontAttributes="Bold"
-                FontSize="14"
-                Text="Description:" />
+            
+            <!-- Description Section with Text-to-Speech -->
+            <Grid Grid.Row="5" 
+                  Margin="0,20,0,0"
+                  ColumnDefinitions="*,Auto,Auto">
+                <Label
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    FontSize="14"
+                    Text="Description:"
+                    VerticalOptions="Center" />
+                
+                <!-- Play Button (visible when not speaking) -->
+                <Button
+                    Grid.Column="1"
+                    BackgroundColor="#6200ea"
+                    Command="{Binding SpeakDescriptionCommand}"
+                    FontFamily="FA-solid"
+                    FontSize="16"
+                    HeightRequest="40"
+                    IsVisible="{Binding IsSpeaking, Converter={StaticResource InvertedBoolConverter}}"
+                    Text="{x:Static fa:IconFont.Play}"
+                    TextColor="White"
+                    WidthRequest="50" />
+                
+                <!-- Stop Button (visible when speaking) -->
+                <Button
+                    Grid.Column="2"
+                    BackgroundColor="#d32f2f"
+                    Command="{Binding StopSpeakingCommand}"
+                    FontFamily="FA-solid"
+                    FontSize="16"
+                    HeightRequest="40"
+                    IsVisible="{Binding IsSpeaking}"
+                    Text="{x:Static fa:IconFont.Stop}"
+                    TextColor="White"
+                    WidthRequest="50" />
+            </Grid>
+            
             <Label
                 Grid.Row="6"
                 Margin="0,0,0,20"
                 FontSize="14"
                 Text="{Binding Property.Description}" />
+
+            <!-- Speech Controls (Advanced Features) -->
+            <Grid Grid.Row="7" 
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="20"
+                  IsVisible="{Binding IsSpeaking, Converter={StaticResource InvertedBoolConverter}}">
+                
+                <!-- Pitch Control -->
+                <StackLayout Grid.Column="0">
+                    <Label Text="Pitch" FontSize="12" HorizontalOptions="Center" />
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="5">
+                        <Button Grid.Column="0"
+                                Command="{Binding DecreasePitchCommand}"
+                                Text="-"
+                                FontSize="16"
+                                WidthRequest="30"
+                                HeightRequest="30"
+                                BackgroundColor="LightGray" />
+                        <Label Grid.Column="1"
+                               Text="{Binding SpeechPitch, StringFormat='{0:F1}'}"
+                               FontSize="12"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="2"
+                                Command="{Binding IncreasePitchCommand}"
+                                Text="+"
+                                FontSize="16"
+                                WidthRequest="30"
+                                HeightRequest="30"
+                                BackgroundColor="LightGray" />
+                    </Grid>
+                </StackLayout>
+
+                <!-- Volume Control -->
+                <StackLayout Grid.Column="1">
+                    <Label Text="Volume" FontSize="12" HorizontalOptions="Center" />
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="5">
+                        <Button Grid.Column="0"
+                                Command="{Binding DecreaseVolumeCommand}"
+                                Text="-"
+                                FontSize="16"
+                                WidthRequest="30"
+                                HeightRequest="30"
+                                BackgroundColor="LightGray" />
+                        <Label Grid.Column="1"
+                               Text="{Binding SpeechVolume, StringFormat='{0:F1}'}"
+                               FontSize="12"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                        <Button Grid.Column="2"
+                                Command="{Binding IncreaseVolumeCommand}"
+                                Text="+"
+                                FontSize="16"
+                                WidthRequest="30"
+                                HeightRequest="30"
+                                BackgroundColor="LightGray" />
+                    </Grid>
+                </StackLayout>
+            </Grid>
+
             <Label
-                Grid.Row="7"
+                Grid.Row="8"
                 FontAttributes="Bold"
                 FontSize="14"
                 Text="Listed by:" />
-            <Grid Grid.Row="8" ColumnDefinitions="auto, *">
+            <Grid Grid.Row="9" ColumnDefinitions="auto, *">
                 <Image
                     Grid.Column="0"
                     Source="{Binding Agent.ImageUrl}"
