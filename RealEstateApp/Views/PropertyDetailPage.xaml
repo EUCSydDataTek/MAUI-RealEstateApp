@@ -22,7 +22,7 @@
     <ScrollView>
         <Grid
             Padding="15"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
             RowSpacing="10">
             <Image
                 Grid.Row="0"
@@ -85,8 +85,33 @@
                 FontSize="14"
                 Text="{Binding Property.LandSize, StringFormat='Land size: {0} &#x33a1;'}" />
             
+            <!-- Map Action Buttons -->
+            <Grid Grid.Row="5"
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="10"
+                  Margin="0,10,0,10">
+                <Button
+                    Grid.Column="0"
+                    Command="{Binding OpenInMapsCommand}"
+                    BackgroundColor="#2196F3"
+                    TextColor="White"
+                    FontFamily="FA-solid"
+                    Text="{x:Static fa:IconFont.MapMarkedAlt}"
+                    FontSize="16"
+                    HeightRequest="50" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding OpenInNavigationCommand}"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White"
+                    FontFamily="FA-solid"
+                    Text="{x:Static fa:IconFont.Directions}"
+                    FontSize="16"
+                    HeightRequest="50" />
+            </Grid>
+            
             <!-- Description Section with Text-to-Speech -->
-            <Grid Grid.Row="5" 
+            <Grid Grid.Row="6" 
                   Margin="0,20,0,0"
                   ColumnDefinitions="*,Auto,Auto">
                 <Label
@@ -124,13 +149,13 @@
             </Grid>
             
             <Label
-                Grid.Row="6"
+                Grid.Row="7"
                 Margin="0,0,0,20"
                 FontSize="14"
                 Text="{Binding Property.Description}" />
 
             <!-- Speech Controls (Advanced Features) -->
-            <Grid Grid.Row="7" 
+            <Grid Grid.Row="8" 
                   ColumnDefinitions="*,*"
                   ColumnSpacing="20"
                   IsVisible="{Binding IsSpeaking, Converter={StaticResource InvertedBoolConverter}}">
@@ -189,11 +214,11 @@
             </Grid>
 
             <Label
-                Grid.Row="8"
+                Grid.Row="9"
                 FontAttributes="Bold"
                 FontSize="14"
                 Text="Listed by:" />
-            <Grid Grid.Row="9" ColumnDefinitions="auto, *">
+            <Grid Grid.Row="10" ColumnDefinitions="auto, *">
                 <Image
                     Grid.Column="0"
                     Source="{Binding Agent.ImageUrl}"

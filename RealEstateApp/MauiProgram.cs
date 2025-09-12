@@ -48,6 +48,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<IEmail>(Email.Default);
         builder.Services.AddSingleton<ISms>(Sms.Default);
         builder.Services.AddSingleton<IPhoneDialer>(PhoneDialer.Default);
+        
+        // Register Map service
+        builder.Services.AddSingleton<IMap>(Map.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();

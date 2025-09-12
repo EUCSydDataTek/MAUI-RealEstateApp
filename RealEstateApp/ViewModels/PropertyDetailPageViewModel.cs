@@ -13,15 +13,17 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
     private readonly IEmail email;
     private readonly ISms sms;
     private readonly IPhoneDialer phoneDialer;
+    private readonly IMap map;
     private CancellationTokenSource _speechCts;
 
-    public PropertyDetailPageViewModel(IPropertyService service, ITextToSpeech textToSpeech, IEmail email, ISms sms, IPhoneDialer phoneDialer)
+    public PropertyDetailPageViewModel(IPropertyService service, ITextToSpeech textToSpeech, IEmail email, ISms sms, IPhoneDialer phoneDialer, IMap map)
     {
         this.service = service;
         this.textToSpeech = textToSpeech;
         this.email = email;
         this.sms = sms;
         this.phoneDialer = phoneDialer;
+        this.map = map;
     }
 
     #region PROPERTIES
@@ -98,6 +100,12 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
     
     private Command emailVendorCommand;
     public ICommand EmailVendorCommand => emailVendorCommand ??= new Command(async () => await EmailVendor());
+
+    private Command openInMapsCommand;
+    public ICommand OpenInMapsCommand => openInMapsCommand ??= new Command(async () => await OpenInMaps());
+
+    private Command openInNavigationCommand;
+    public ICommand OpenInNavigationCommand => openInNavigationCommand ??= new Command(async () => await OpenInNavigation());
     #endregion
 
     #region TEXT-TO-SPEECH METHODS
@@ -184,6 +192,65 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
     private void DecreaseVolume()
     {
         SpeechVolume = Math.Max(0.0f, SpeechVolume - 0.1f);
+    }
+    #endregion
+
+    #region MAP METHODS
+    private async Task OpenInMaps()
+    {
+        if (Property?.Latitude == null || Property?.Longitude == null)
+        {
+            await Shell.Current.DisplayAlert("No Location", "Location coordinates are not available for this property", "OK");
+            return;
+        }
+
+        try
+        {
+            var location = new Location(Property.Latitude.Value, Property.Longitude.Value);
+            var options = new MapLaunchOptions
+            {
+                Name = Property.Address
+            };
+
+            await map.OpenAsync(location, options);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Feature Not Supported", "Maps is not supported on this device", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Map Error", $"Unable to open maps: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task OpenInNavigation()
+    {
+        if (Property?.Latitude == null || Property?.Longitude == null)
+        {
+            await Shell.Current.DisplayAlert("No Location", "Location coordinates are not available for this property", "OK");
+            return;
+        }
+
+        try
+        {
+            var location = new Location(Property.Latitude.Value, Property.Longitude.Value);
+            var options = new MapLaunchOptions
+            {
+                Name = Property.Address,
+                NavigationMode = NavigationMode.Driving
+            };
+
+            await map.OpenAsync(location, options);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Feature Not Supported", "Maps navigation is not supported on this device", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Navigation Error", $"Unable to open navigation: {ex.Message}", "OK");
+        }
     }
     #endregion
 
