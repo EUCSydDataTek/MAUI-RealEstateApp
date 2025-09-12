@@ -10,12 +10,18 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
 {
     private readonly IPropertyService service;
     private readonly ITextToSpeech textToSpeech;
+    private readonly IEmail email;
+    private readonly ISms sms;
+    private readonly IPhoneDialer phoneDialer;
     private CancellationTokenSource _speechCts;
 
-    public PropertyDetailPageViewModel(IPropertyService service, ITextToSpeech textToSpeech)
+    public PropertyDetailPageViewModel(IPropertyService service, ITextToSpeech textToSpeech, IEmail email, ISms sms, IPhoneDialer phoneDialer)
     {
         this.service = service;
         this.textToSpeech = textToSpeech;
+        this.email = email;
+        this.sms = sms;
+        this.phoneDialer = phoneDialer;
     }
 
     #region PROPERTIES
@@ -83,6 +89,15 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
     
     private Command goToImageListCommand;
     public ICommand GoToImageListCommand => goToImageListCommand ??= new Command(async () => await GoToImageList());
+    
+    private Command callVendorCommand;
+    public ICommand CallVendorCommand => callVendorCommand ??= new Command(async () => await CallVendor());
+    
+    private Command contactVendorCommand;
+    public ICommand ContactVendorCommand => contactVendorCommand ??= new Command(async () => await ShowContactOptions());
+    
+    private Command emailVendorCommand;
+    public ICommand EmailVendorCommand => emailVendorCommand ??= new Command(async () => await EmailVendor());
     #endregion
 
     #region TEXT-TO-SPEECH METHODS
@@ -204,6 +219,118 @@ public class PropertyDetailPageViewModel : BaseViewModel, IDisposable
         catch (Exception ex)
         {
             await Shell.Current.DisplayAlert("Navigation Error", $"Unable to open image gallery: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task CallVendor()
+    {
+        if (Property?.Vendor?.Phone == null)
+        {
+            await Shell.Current.DisplayAlert("No Phone Number", "Vendor phone number is not available", "OK");
+            return;
+        }
+
+        try
+        {
+            phoneDialer.Open(Property.Vendor.Phone);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Feature Not Supported", "Phone dialer is not supported on this device", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Call Error", $"Unable to make call: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task ShowContactOptions()
+    {
+        if (Property?.Vendor?.Phone == null)
+        {
+            await Shell.Current.DisplayAlert("No Phone Number", "Vendor phone number is not available", "OK");
+            return;
+        }
+
+        string action = await Shell.Current.DisplayActionSheet(
+            $"Contact {Property.Vendor.FullName}", 
+            "Cancel", 
+            null, 
+            "Call", 
+            "SMS");
+
+        switch (action)
+        {
+            case "Call":
+                await CallVendor();
+                break;
+            case "SMS":
+                await SendSmsToVendor();
+                break;
+        }
+    }
+
+    private async Task SendSmsToVendor()
+    {
+        if (Property?.Vendor?.Phone == null)
+        {
+            await Shell.Current.DisplayAlert("No Phone Number", "Vendor phone number is not available", "OK");
+            return;
+        }
+
+        try
+        {
+            var smsMessage = new SmsMessage(
+                $"Hej, {Property.Vendor.FirstName}, angående {Property.Address}",
+                new[] { Property.Vendor.Phone });
+
+            await sms.ComposeAsync(smsMessage);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Feature Not Supported", "SMS is not supported on this device", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("SMS Error", $"Unable to send SMS: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task EmailVendor()
+    {
+        if (Property?.Vendor?.Email == null)
+        {
+            await Shell.Current.DisplayAlert("No Email Address", "Vendor email address is not available", "OK");
+            return;
+        }
+
+        try
+        {
+            // Create property attachment file
+            var folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var attachmentFilePath = Path.Combine(folder, "property.txt");
+            File.WriteAllText(attachmentFilePath, $"Property Details:\n\nAddress: {Property.Address}\nPrice: {Property.Price:C0}\nBeds: {Property.Beds}\nBaths: {Property.Baths}\nLand Size: {Property.LandSize} m²\nDescription: {Property.Description}");
+
+            var emailMessage = new EmailMessage
+            {
+                To = new List<string> { Property.Vendor.Email },
+                Subject = $"Inquiry about {Property.Address}",
+                Body = $"Dear {Property.Vendor.FirstName},\n\nI am interested in learning more about the property at {Property.Address}.\n\nPlease find the property details attached.\n\nBest regards",
+                Attachments = new List<EmailAttachment>
+                {
+                    new EmailAttachment(attachmentFilePath)
+                }
+            };
+
+            await email.ComposeAsync(emailMessage);
+        }
+        catch (FeatureNotSupportedException)
+        {
+            await Shell.Current.DisplayAlert("Feature Not Supported", "Email is not supported on this device", "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Email Error", $"Unable to send email: {ex.Message}", "OK");
         }
     }
 

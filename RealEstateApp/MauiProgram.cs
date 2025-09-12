@@ -43,6 +43,11 @@ public static class MauiProgram
         
         // Register Accelerometer service for shake detection
         builder.Services.AddSingleton<IAccelerometer>(Accelerometer.Default);
+        
+        // Register Email, SMS and Phone services
+        builder.Services.AddSingleton<IEmail>(Email.Default);
+        builder.Services.AddSingleton<ISms>(Sms.Default);
+        builder.Services.AddSingleton<IPhoneDialer>(PhoneDialer.Default);
 
         builder.Services.AddSingleton<IPropertyService, MockRepository>();
         builder.Services.AddSingleton<PropertyListPage>();

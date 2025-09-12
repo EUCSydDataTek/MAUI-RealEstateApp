@@ -23,6 +23,8 @@ namespace RealEstateApp.Models
         public List<string> ImageUrls { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string NeighbourhoodUrl { get; set; }
+        public Vendor Vendor { get; set; }
 
         private string _aspect;
         public string Aspect
